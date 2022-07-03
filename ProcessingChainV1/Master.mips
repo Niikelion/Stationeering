@@ -1,0 +1,43 @@
+alias IdSelector d0
+alias ActionSelector d1
+alias Dial d2
+alias ConfirmBtn d3
+alias Id r15
+alias Action r14
+alias LastId r13
+define Idle 0
+define Select 1
+define Deselect 2
+define Empty 3
+init:
+    s IdSelector Setting -1
+    s ActionSelector Setting 0
+start:
+    yield
+    l r0 ConfirmBtn Setting
+    beqz r0 start
+    move LastId Id
+    l Id Dial Setting
+    move Action Select
+    jal execute
+    bltz LastId endLoop
+    push Id
+    move Id LastId
+    move Action Empty
+    jal execute
+    pop Id
+endLoop:
+    l r0 ConfirmBtn Setting
+    bnez r0 endLoop
+    j start
+#functions
+execute:
+    l r0 ActionSelector Setting
+    bnez r0 execute
+    s IdSelector Setting Id
+    s ActionSelector Setting Action
+execWait:
+    yield
+    l r0 ActionSelector Setting
+    bnez r0 execWait
+    j ra

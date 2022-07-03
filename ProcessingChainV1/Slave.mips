@@ -1,0 +1,83 @@
+alias InputSorter d0
+alias Machine d1
+alias IdSelector d2
+alias ActionSelector d3
+alias CIdSelector d4
+alias Id r15
+alias Action r14
+alias State r13
+alias Ret r12
+alias CId r11
+define Idle 0
+define Selected 1
+define Deselected 2
+define Emptying 3
+init:
+    jal close
+    jal setSort
+    jal getId
+    move State Idle
+start:
+    yield
+    beqal State Selected routeIn
+    bneal State Selected routeOut
+    jal fetch
+    bne CId Id start
+    beqal Action Selected selfSelect
+    beqal Action Deselected selfDeselect
+    beqal Action Emptying empty
+    j start
+#high level functions
+selfSelect:
+    push ra
+    move State Selected
+    jal routeIn
+    s ActionSelector Setting Idle
+    pop ra
+    j ra
+selfDeselect:
+    push ra
+    move State Deselected
+    jal routeOut
+    s ActionSelector Setting Idle
+    pop ra
+    j ra
+empty:
+    push ra
+    move State Emptying
+    jal open
+emptyLoop:
+    jal routeOut
+    jal contents
+    bnez Ret emptyLoop
+    move State Idle
+    s ActionSelector Setting Idle
+    jal close
+    pop ra
+    j ra
+#low level functions
+open:
+    s Machine Open 1
+    j ra
+close:
+    s Machine Open 0
+    j ra
+setSort:
+    s InputSorter Mode 2
+    j ra
+routeIn:
+    s InputSorter Output 1
+    j ra
+routeOut:
+    s InputSorter Output 0
+    j ra
+fetch:
+    l Action ActionSelector Setting
+    l Id IdSelector Setting
+    j ra
+getId:
+    l CId CIdSelector Setting
+    j ra
+contents:
+    l Ret Machine Reagents
+    j ra
