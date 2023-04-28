@@ -1,7 +1,6 @@
 alias IdSelector d0
 alias ActionSelector d1
-alias Dial d2
-alias ConfirmBtn d3
+alias IdRequester d2
 alias Id r15
 alias Action r14
 alias LastId r13
@@ -14,24 +13,15 @@ init:
     s ActionSelector Setting 0
 start:
     yield
-    l r0 ConfirmBtn Setting
-    beqz r0 start
-    move LastId Id
-    l Id Dial Setting
-    move Action Select
-    jal execute
-    bltz LastId endLoop
-    push Id
-    move Id LastId
-    move Action Empty
-    jal execute
-    pop Id
-endLoop:
-    l r0 ConfirmBtn Setting
-    bnez r0 endLoop
+    l r0 IdRequester Setting
+    bltz r0 start
+    move Id r0
+    jal transfer
+	s IdRequester Setting -1
     j start
 #functions
 execute:
+    yield
     l r0 ActionSelector Setting
     bnez r0 execute
     s IdSelector Setting Id
@@ -40,4 +30,20 @@ execWait:
     yield
     l r0 ActionSelector Setting
     bnez r0 execWait
+    j ra
+transfer:
+    push ra
+    move Action Select
+    jal execute
+    bltz LastId transferEnd
+    beq LastId Id transferEnd
+    push Id
+    move Id LastId
+    move Action Empty
+    jal execute
+    pop Id
+transferEnd:
+    move LastId Id
+	s db Setting Id
+    pop ra
     j ra

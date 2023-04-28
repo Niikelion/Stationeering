@@ -1,0 +1,41 @@
+    alias ItemHash d0
+    alias ItemCount d1
+    alias IdRequester d2
+    alias HashSelector d3
+    alias CountSelector d4
+    alias Item r15
+    alias Count r14
+    alias Id r13
+    alias Ticks r12
+    define MaxTicks 20
+start:
+    s ItemHash Setting -1
+waitH:
+    l Item ItemHash Setting
+    l Count ItemCount Setting
+    slt r0 Item -1
+    sgt r1 Item 255
+    or r0 r0 r1
+    s db Setting r0
+    beqz r0 waitH
+    s HashSelector Setting Item
+    move Ticks MaxTicks
+waitR:
+    s db Setting Item
+    yield
+    sub Ticks Ticks 1
+    bltz Ticks start
+    l Id HashSelector Setting
+    beq Item Id waitR
+send:
+    s IdRequester Setting Id
+waitS:
+    yield
+    l Id IdRequester Setting
+    bne Id -1 waitS
+    s CountSelector Setting Count
+waitI:
+    yield
+    l Count CountSelector Setting
+    bne Count 0 waitI
+    j start

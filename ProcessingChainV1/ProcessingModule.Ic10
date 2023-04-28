@@ -1,0 +1,46 @@
+    alias CountSelector d0
+    alias Machine d1
+    alias Activator d2
+    alias RecipeSelector d3
+    alias Id d4
+    alias Count r15
+    alias Produced r14
+    alias ItemHash r13
+    define IsLathe 0
+start:
+    l r0 Activator Setting
+    beqz r0 start
+    l ItemHash RecipeSelector Setting
+    slt r0 ItemHash -1
+    sgt r1 ItemHash 255
+    or r0 r0 r1
+    bnezal r0 selectRecipe
+    l Count CountSelector Setting
+    bnezal Count produce
+    j start
+produce:
+    s Machine ClearMemory 1
+    yield
+    s Machine ClearMemory 0
+    s Machine Activate 1
+loop:
+    l r0 CountSelector Setting
+    bne r0 Count ra
+    l Produced Machine ExportCount
+    sub r0 Count Produced
+    s db Setting r0
+    blt Produced Count loop
+    s CountSelector Setting 0
+    s Machine Activate 0
+    j ra
+selectRecipe:
+    seq r0 ItemHash HASH("ItemCableCoil")
+    and r0 r0 IsLathe
+    beq r0 1 ra
+    s Machine RecipeHash ItemHash
+    yield
+    l r0 Machine RecipeHash
+    bne r0 ItemHash ra
+    l r0 Id Setting
+    s RecipeSelector Setting r0
+    j ra

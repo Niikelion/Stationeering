@@ -1,27 +1,29 @@
-alias InputSorter d0
-alias Machine d1
-alias IdSelector d2
-alias ActionSelector d3
-alias CIdSelector d4
-alias Id r15
-alias Action r14
-alias State r13
-alias Ret r12
-alias CId r11
-define Idle 0
-define Selected 1
-define Deselected 2
-define Emptying 3
+    alias InputFlip d0
+    alias Machine d1
+    alias IdSelector d2
+    alias ActionSelector d3
+    alias CIdSelector d4
+    alias Id r15
+    alias Action r14
+    alias State r13
+    alias Ret r12
+    alias CId r11
+    define Idle 0
+    define Selected 1
+    define Deselected 2
+    define Emptying 3
 init:
     jal close
-    jal setSort
+    jal routeOut
     jal getId
     move State Idle
 start:
     yield
+	seq r0 State Selected
+	s db Setting r0
     beqal State Selected routeIn
     bneal State Selected routeOut
-    jal fetch
+	jal fetch
     bne CId Id start
     beqal Action Selected selfSelect
     beqal Action Deselected selfDeselect
@@ -33,10 +35,12 @@ selfSelect:
     move State Selected
     jal routeIn
     s ActionSelector Setting Idle
+	s db Setting 1
     pop ra
     j ra
 selfDeselect:
     push ra
+	s db Setting 0
     move State Deselected
     jal routeOut
     s ActionSelector Setting Idle
@@ -44,6 +48,7 @@ selfDeselect:
     j ra
 empty:
     push ra
+	s db Setting 0
     move State Emptying
     jal open
 emptyLoop:
@@ -58,18 +63,21 @@ emptyLoop:
 #low level functions
 open:
     s Machine Open 1
+	sleep 1
     j ra
 close:
     s Machine Open 0
-    j ra
-setSort:
-    s InputSorter Mode 2
+	sleep 1
     j ra
 routeIn:
-    s InputSorter Output 1
+    s InputFlip Mode 1
+    s InputFlip Setting 1
+    s InputFlip SettingOutput 0
     j ra
 routeOut:
-    s InputSorter Output 0
+    s InputFlip Mode 0
+    s InputFlip Setting 0
+    s InputFlip SettingOutput 1
     j ra
 fetch:
     l Action ActionSelector Setting
@@ -80,4 +88,5 @@ getId:
     j ra
 contents:
     l Ret Machine Reagents
+    j ra
     j ra
