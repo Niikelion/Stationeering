@@ -1,0 +1,26 @@
+    alias Furnace d0
+    alias Valve d1
+    alias Indicator d2
+    alias LastCount r15
+start:
+waitForItems:
+    yield
+    s db Setting 0
+    s Indicator On 0
+    ls r0 Valve 0 Occupied
+    beqz r0 waitForItems
+    s db Setting 1
+    s Indicator On 1
+waitForEmpty:
+    yield
+    ls r0 Valve 0 Occupied
+    bnez r0 waitForEmpty
+    sleep 1
+    ls r0 Valve 0 Occupied
+    xor r0 r0 1
+    l r1 Furnace ImportCount
+    l r2 Furnace ExportCount
+    sne r1 r1 r2
+    and r0 r0 r1
+    bnez r0 waitForEmpty
+    j start

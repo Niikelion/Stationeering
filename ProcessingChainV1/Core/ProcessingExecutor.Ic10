@@ -1,0 +1,58 @@
+    alias ItemHash d0
+    alias ItemCount d1
+    alias IdRequester d2
+    alias HashSelector d3
+    alias CountSelector d4
+    alias Item r15
+    alias Count r14
+    alias Id r13
+    alias Ticks r12
+    define MaxTicks 20
+start:
+    # Request next item from bus
+    s ItemHash Setting -1
+    # Remove previous request for machine
+    s HashSelector Setting -1
+waitH:
+    l Item ItemHash Setting
+    l Count ItemCount Setting
+    slt r0 Item -1
+    sgt r1 Item 255
+    or r0 r0 r1
+    # Wait for ItemHash to be outside of range [-1, 255]
+    beqz r0 waitH
+    jal findMachine
+    jal selectMachine
+    jal requestAmount
+    s db Setting 0
+    j start
+# --Functions--
+# Find machine
+findMachine:
+    s HashSelector Setting Item
+    move Ticks MaxTicks
+waitForMachine:
+    yield
+    sub Ticks Ticks 1
+    # Abandon request if after MaxTicks recipe was not found
+    bltz Ticks start
+    l Id HashSelector Setting
+    # Wait until machine to process request was found
+    beq Item Id waitForMachine
+    j ra
+# Select machine
+selectMachine:
+    s IdRequester Setting Id
+waitForSelect:
+    yield
+    l Id IdRequester Setting
+    bne Id -1 waitForSelect
+    j ra
+# Request amount
+requestAmount:
+    s CountSelector Setting Count
+waitForAmount:
+    yield
+    l Count CountSelector Setting
+    bne Count 0 waitForAmount
+    j ra

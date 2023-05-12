@@ -1,0 +1,68 @@
+    alias CountSelector d0
+    alias Machine d1
+    alias Activator d2
+    alias RecipeSelector d3
+    alias Id d4
+    alias Count r15
+    alias Produced r14
+    alias ItemHash r13
+    alias IsLathe r12
+init:
+    # Check if machine is Autolathe
+    l r0 Machine PrefabHash
+    seq IsLathe r0 HASH("StructureAutolathe")
+start:
+    l ItemHash RecipeSelector Setting
+    slt r0 ItemHash -1
+    sgt r1 ItemHash 255
+    or r0 r0 r1
+    # Select recipe when ItemHash goes outside of range [-1, 255] 
+    bnezal r0 selectRecipe
+    l r0 Activator Setting
+    beqz r0 start
+    l Count CountSelector Setting
+    # Produce Count items if device is active
+    bnezal Count produce
+    j start
+# --Functions--
+# Produce amount
+produce:
+    # Clear export count
+    s Machine ClearMemory 1
+    yield
+    s Machine ClearMemory 0
+loop:
+    s Machine Activate 1
+    yield
+    l r0 CountSelector Setting
+    # When count changes, abandon request
+    bne r0 Count produceEnd
+    l Produced Machine ExportCount
+    sub r0 Count Produced
+    # Show remaining amount
+    s db Setting r0
+    s db:0 Channel1 r0
+    # Wait for all items before finishing
+    blt Produced Count loop
+    s CountSelector Setting 0
+produceEnd:
+    s db Setting 0
+    s db:0 Channel1 0
+    s Machine Activate 0
+    j ra
+# Select recipe
+selectRecipe:
+    seq r0 ItemHash HASH("ItemCableCoil")
+    and r0 r0 IsLathe
+    # Deny cable coil request when using autolathe
+    beq r0 1 ra
+    # Set recipe for machine
+    s Machine RecipeHash ItemHash
+    yield
+    l r0 Machine RecipeHash
+    # If machine did not accept recipe, deny request
+    bne r0 ItemHash ra
+    # Signal current device id otherwise
+    l r0 Id Setting
+    s RecipeSelector Setting r0
+    j ra

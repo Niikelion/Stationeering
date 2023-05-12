@@ -1,0 +1,20 @@
+    alias Vending d0
+    alias ResourceRequester d1
+    alias Item r15
+start:
+    yield
+    l Item ResourceRequester Setting
+    slt r0 Item -1
+    sgt r1 Item 10000
+    or r0 r0 r1
+    beqz r0 start
+    s Vending ClearMemory 1
+    yield
+    s Vending ClearMemory 0
+    s Vending RequestHash Item
+    sleep 1
+    l r0 Vending ExportCount
+    s ResourceRequester Setting r0
+    add r0 r0 1
+    s db Setting r0
+    j start

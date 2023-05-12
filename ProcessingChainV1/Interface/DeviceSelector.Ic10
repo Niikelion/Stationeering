@@ -1,0 +1,12 @@
+    alias IdRequester d0
+    alias Button d1
+    alias CIdSelector d2
+    alias Id r15
+start:
+    l Id CIdSelector Setting
+    l r0 Button Setting
+    beqz r0 end
+    s IdRequester Setting Id
+end:
+    yield
+    j start

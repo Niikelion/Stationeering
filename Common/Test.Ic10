@@ -1,0 +1,36 @@
+    alias FlipFlop d0
+    alias Count r15
+    alias Item r14
+    define Negate 0
+init:
+    push HASH("ItemKitChute")
+    move Count sp
+start:
+    yield
+    ls Item FlipFlop 0 OccupantHash
+    beqz Item start
+    jal findItem
+    jal route
+    s FlipFlop On 1
+    yield
+    s FlipFlop On 0
+    j start
+route:
+    xor r0 r0 Negate
+    s FlipFlop Mode r0
+    s FlipFlop Setting r0
+    xor r0 r0 1
+    s FlipFlop SettingOutput r0
+    xor r0 r0 1
+    xor r0 r0 Negate
+    j ra
+findItem:
+    move sp 0
+    move r0 0
+findLoop:
+    add sp sp 1
+    bgt sp Count ra
+    peek r0
+    seq r0 r0 Item
+    bgtz r0 ra
+    j findLoop

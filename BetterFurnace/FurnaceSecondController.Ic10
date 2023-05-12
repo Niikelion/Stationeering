@@ -1,0 +1,13 @@
+    alias RefuelPump d0
+    alias Controller d1
+    alias InputSensor d2
+    define MaxInputPressure 20000
+start:
+    l r0 Controller Setting
+    seq r0 r0 2
+    l r1 InputSensor Pressure
+    slt r1 r1 MaxInputPressure
+    and r0 r0 r1
+    s RefuelPump On r0
+    yield
+    j start

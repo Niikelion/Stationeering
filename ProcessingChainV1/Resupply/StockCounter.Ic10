@@ -1,0 +1,11 @@
+    alias ValveIn d0
+    alias ValveOut d1
+    alias Value d2
+
+start:
+    yield
+    ls r0 ValveIn 0 Occupied
+    bnez r0 handleIn
+    ls r0 ValveOut 0 Occupied
+    bnez r0 handleOut
+    j start

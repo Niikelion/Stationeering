@@ -1,0 +1,73 @@
+    alias Action d0
+    alias Value d1
+    alias Id d2
+    alias SAction d3
+    alias SValue d4
+    alias SID d5
+    alias CurrentId r15
+    alias VAction r14
+    alias VValue r13
+    alias Callback r12
+    define WaitTicks 5
+init:
+    l CurrentId SID Setting
+    s Action Setting 0
+    s Value Setting 0
+start:
+    yield
+    move VValue 0 # Use as previous command
+    move Callback readCommand # Wait for change in command
+    jal waitForCommand
+    jal takeControl # Take control
+    jal sendSCommand # Send it to shared bus
+    move Callback readSCommand # Wait for response
+    jal waitForCommand
+    jal sendCommand # Send it back to source bus
+    jal releaseControl # Release controll
+    j start
+takeControl:
+    push ra
+waitForReady:
+    yield
+    l r0 SID Setting
+    bne r0 0 waitForReady
+    s SID Setting CurrentId
+    move r0 WaitTicks
+    jal waitForTicks
+    l r0 SID Setting
+    bne r0 CurrentId waitForReady
+    pop ra
+    j ra
+releaseControl:
+    s SID Setting 0
+    j ra
+waitForCommand:
+    push ra
+waitForCommandLoop:
+    yield
+    move r0 VValue
+    jal Reader
+    beq VValue r0 waitForCommandLoop
+    pop ra
+    j ra
+readCommand:
+    l VValue Value Setting
+    l VAction Action Setting
+    j ra
+readSCommand:
+    l VValue SValue Setting
+    l VAction SAction Setting
+    j ra
+sendCommand:
+    s Value Setting VValue
+    s Action Setting VAction
+    j ra
+sendSCommand:
+    s SValue Setting VValue
+    s SAction Setting VAction
+    j ra
+waitForTicks:
+    blez r0 ra
+    yield
+    sub r0 r0 1
+    j waitForTicks

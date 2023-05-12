@@ -1,0 +1,63 @@
+# Processing Chain V1 Driver
+alias IdSelector d0
+alias ActionSelector d1
+alias IdRequester d2
+alias Id r15
+alias Action r14
+alias LastId r13
+define Idle 0
+define Select 1
+define Deselect 2
+define Empty 3
+init:
+    # Erase current command
+    s IdSelector Setting -1
+    s ActionSelector Setting 0
+start:
+    yield
+    # Wait for id request
+    l r0 IdRequester Setting
+    bltz r0 start
+    # Process request
+    move Id r0
+    jal transfer
+    # Signal end of request
+	s IdRequester Setting -1
+    j start
+# --Functions--
+# Execute command
+execute:
+    yield
+    # Wait for end of previous action
+    l r0 ActionSelector Setting
+    bnez r0 execute
+    # Send action
+    s IdSelector Setting Id
+    s ActionSelector Setting Action
+execWait:
+    # Wait for action to end
+    yield
+    l r0 ActionSelector Setting
+    bnez r0 execWait
+    j ra
+# Transfer items
+transfer:
+    push ra
+    # Select requested device
+    move Action Select
+    jal execute
+    # Exit if does not have to empty previous device
+    bltz LastId transferEnd
+    beq LastId Id transferEnd
+    push Id
+    # Empty previous device
+    move Id LastId
+    move Action Empty
+    jal execute
+    pop Id
+transferEnd:
+    # Save last device and signal current device
+    move LastId Id
+	s db Setting Id
+    pop ra
+    j ra

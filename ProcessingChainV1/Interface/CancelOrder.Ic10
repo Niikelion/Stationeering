@@ -1,0 +1,14 @@
+    alias CancelButton d0
+    alias CountRequester d1
+    alias BufferCount d2
+start:
+    yield
+    l r0 CancelButton Setting
+    beqz r0 start
+    s CountRequester Setting 0
+    s BufferCount Setting 0
+loop:
+    yield
+    l r0 CancelButton Setting
+    bgtz r0 loop
+    j start

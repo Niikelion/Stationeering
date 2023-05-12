@@ -1,0 +1,41 @@
+    alias Machine d0
+    alias Activator d1
+    alias InfoRequester d2
+    alias Request r15
+    alias LastImport r14
+init:
+    move LastImport -1
+start:
+    jal waitForActive
+    move LastImport 0
+    jal waitForResources
+    jal waitForFull
+waitForRequest:
+    l r0 Activator Setting
+    # Wait for active when disabled
+    beqz r0 start
+    l Request InfoRequester Setting
+    slt r0 Request -1
+    sgt r1 Request 10000
+    or r0 r0 r1
+    beqz r0 waitForRequest
+    lr r0 Machine Contents Request
+    s InfoRequester Setting r0
+    j waitForRequest
+waitForActive:
+    yield
+    l r0 Activator Setting
+    beqz r0 waitForActive
+    j ra
+waitForResources:
+    l r0 Machine Reagents
+    bgtz r0 ra
+    yield
+    j waitForResources
+waitForFull:
+    l r0 Machine ImportCount
+    move r1 LastImport
+    move LastImport r0
+    beq r0 r1 ra
+    sleep 2
+    j waitForFull

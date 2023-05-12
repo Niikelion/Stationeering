@@ -1,0 +1,24 @@
+    alias Silo d0
+    alias Flush d1
+    alias Count r15
+    define OpenCount 20
+start:
+    l Count Silo Quantity
+    beqzal Count close
+    sgt r1 Count OpenCount
+    jal checkFlush
+    or r1 r0 r1
+    bgtzal r1 open
+    yield
+    j start
+checkFlush:
+    sdse r0 Flush
+    beqz r0 ra
+    l r0 Flush Setting
+    j ra
+open:
+    s Silo Open 1
+    j ra
+close:
+    s Silo Open 0
+    j ra

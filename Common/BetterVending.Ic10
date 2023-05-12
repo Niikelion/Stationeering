@@ -1,0 +1,44 @@
+    alias Vending d0
+    alias Stacker d1
+    alias FlipFlop d2
+    alias Valve d3
+    alias Requester d4
+    alias ItemHash r15
+    define Negate 0
+start:
+    ls r0 Valve 0 Occupied
+    bgtzal r0 handleInput
+    l ItemHash Requester Setting
+    bgtal ItemHash 1 handleOutput
+    yield
+    j start
+handleInput:
+    push ra
+    s Vending ClearMemory 1
+    ls ItemHash Valve 0 OccupantHash
+    s Valve Open 1
+    move r0 1 # Route traffick back in
+    jal route
+inputLoop:
+    s Vending RequestHash ItemHash
+    sleep 1
+    l r0 Vending ExportCount
+    bgtz r0 inputLoop
+    s Stacker Activate 1
+    yield
+    s Stacker Activate 0
+    move r0 0
+    jal route
+    pop ra
+    j ra
+handleOutput:
+    j ra
+route:
+    xor r0 r0 Negate
+    s FlipFlop Mode r0
+    s FlipFlop Setting r0
+    xor r0 r0 1
+    s FlipFlop SettingOutput r0
+    xor r0 r0 1
+    xor r0 r0 Negate
+    j ra

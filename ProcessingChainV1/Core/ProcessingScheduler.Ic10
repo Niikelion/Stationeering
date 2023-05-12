@@ -1,0 +1,48 @@
+    alias ItemCount d0
+    alias ItemHash d1
+    alias CountSelector d2
+    alias HashSelector d3
+    alias Overflow db
+    alias Item r15
+    alias Count r14
+    alias Length r13
+    alias Start r12
+    alias End r11
+    define MaxLength 256
+start:
+    yield
+    l Item ItemHash Setting
+    l Count ItemCount Setting
+    slt r0 Item -1
+    sgt r1 Item 255
+    or r0 r0 r1
+    # Enqueue if ItemHash is outside of range [-1, 255]
+    bnezal r0 enqueue
+    # Dequeue if HashSelector = -1
+    l r0 HashSelector Setting
+    beqal r0 -1 dequeue
+    j start
+dequeue:
+    # Return if no elements to dequeue
+    beqz Length ra
+    sub Length Length 1
+    add Start Start 2
+    move sp Start
+    pop Count
+    pop Item
+    s CountSelector Setting Count
+    s HashSelector Setting Item
+    j ra
+enqueue:
+    sge r0 Length MaxLength
+    s Overflow Setting r0
+    # Exit if overflow
+    bgtz r0 ra
+    s ItemHash Setting 0
+    add Length Length 1
+    move sp End
+    push Item
+    push Count
+    add End End 2
+    mod End End 512
+    j ra

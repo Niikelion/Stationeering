@@ -1,0 +1,119 @@
+    alias Vending d0
+    alias Stacker d1
+    alias OutputFlipFlop d2
+    alias InputFlipFlop d3
+    alias Valve d4
+    alias Override d5
+    alias ItemHash r15
+    alias ItemCount r14
+    alias StackSize r13
+    alias Stack r12
+    define NegateOutput 0
+    define NegateInput 0
+start:
+    bdse Override handleOverride
+    s db Setting 0
+    ls r0 Valve 0 Occupied
+    bgtzal r0 handleInput
+    yield
+    j start
+handleInput:
+    push ra
+    s Vending ClearMemory 1
+    s Stacker ClearMemory 1
+    ls ItemHash Valve 0 OccupantHash
+    ls StackSize Valve 0 MaxQuantity
+    ls ItemCount Valve 0 Quantity
+    seq r1 ItemCount StackSize
+    move r0 r1
+    jal routeInput
+    bgtz r1 inputFastRoute
+    move r0 1 # Route traffick out
+    jal routeOutput
+    jal handlePreviousItem # Move previous to stacker and add count
+    s Valve Open 1 # Move item to Vending machine
+    s db Setting 1
+waitForVending:
+    yield
+    l r0 Vending ImportCount
+    beqz r0 waitForVending
+    slt r0 ItemCount StackSize
+    and r0 r0 Stack
+    beqz r0 inputEnd # We dont need to stack
+    s Vending RequestHash ItemHash # Move new item to stacker
+waitForStacker:
+    yield
+    l r0 Stacker ImportCount
+    beqz r0 waitForStacker
+    blt ItemCount StackSize moveExcessItems
+    s Stacker ClearMemory 1
+waitForOutput:
+    yield
+    l r0 Stacker ExportCount
+    beqz r0 waitForOutput
+    sleep 1
+moveExcessItems:
+    move r0 0 # Route traffick in to store excess items
+    jal routeOutput
+    ls r0 Stacker 2 Occupied
+    beqz r0 inputEnd
+    s Vending ClearMemory 1
+    s Stacker Activate 1
+waitForLast:
+    yield
+    l r0 Vending ImportCount
+    beqz r0 waitForLast
+inputEnd:
+    pop ra
+    j ra
+inputFastRoute:
+    s Valve Open 1
+    j inputEnd
+handlePreviousItem:
+    move Stack 0
+    move r0 2
+handlePreviousLoop:
+    ls r1 Vending r0 Occupied
+    beqz r1 handlePreviousLoopEnd
+    s db Setting r0
+    ls r1 Vending r0 OccupantHash
+    beq r1 ItemHash handlePreviousFound
+handlePreviousLoopEnd:
+    add r0 r0 1
+    ble r0 101 handlePreviousLoop
+    j ra
+handlePreviousFound:
+    s Vending RequestHash ItemHash # Move it to stacker
+handlePreviousWait:
+    yield
+    ls r0 Stacker 2 Occupied
+    beqz r0 handlePreviousWait
+    ls r0 Stacker 2 Quantity
+    add ItemCount ItemCount r0
+    s Vending ClearMemory 1
+    s Stacker ClearMemory 1
+    move Stack 1
+    j ra
+handleOverride:
+    l r0 Override Setting
+    beqz r0 ra
+    s db Setting -1
+waitForRelease:
+    yield
+    l r0 Override Setting
+    bnez r0 waitForRelease
+    j ra
+routeOutput:
+    xor r0 r0 NegateOutput
+    s OutputFlipFlop Mode r0
+    s OutputFlipFlop Setting r0
+    xor r0 r0 1
+    s OutputFlipFlop SettingOutput r0
+    j ra
+routeInput:
+    xor r0 r0 NegateInput
+    s InputFlipFlop Mode r0
+    s InputFlipFlop Setting r0
+    xor r0 r0 1
+    s InputFlipFlop SettingOutput r0
+    j ra
