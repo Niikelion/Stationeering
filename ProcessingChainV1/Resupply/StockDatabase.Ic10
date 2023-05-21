@@ -1,0 +1,79 @@
+    alias Requester d0
+    alias SValue d3
+    alias SAction d4
+    alias ID d5
+    alias RequestHash r15
+    alias Action r14
+    alias Value r13
+    alias CellCount r12
+    alias StackSize r11
+    define StackStart 2
+    define StackEnd 512
+    define CellSize 2
+init:
+    move StackSize StackEnd
+    sub StackSize StackSize StackStart
+    mod r0 StackSize CellSize
+    sub CellCount StackSize r0
+    div CellCount CellCount CellSize
+start:
+    yield
+    l RequestHash Requester Setting
+    bnezal RequestHash handleRequest
+    l Action SAction Setting
+    bnezal Action handleRequest
+    j start
+handleRequest:
+    push ra
+    jal fetch
+    s Requester Setting r0
+waitForEndOfRequest:
+    yield
+    l RequestHash Requester Setting
+    bnez RequestHash waitForEndOfRequest
+    pop ra
+    j ra
+handleUpdate:
+    push ra
+    l Value SValue Setting
+    jal fetch
+    beqz r1 abortUpdate
+    add Value Value r0
+    move r0 sp
+    move sp r1
+    push Value
+    move sp r0
+    pop ra
+    j ra
+abortUpdate:
+    hcf
+fetch:
+    move r2 sp
+    mod sp RequestHash CellCount # calculate cell pos
+    mul sp sp CellSize
+    add sp sp StackStart
+    sub sp sp 1 # +1 to account for peek looking back, -2 for do-while
+    move r0 0
+    move r1 0
+fetchLoop:
+    bgt r1 CellCount fetchAbort # early return when check all cells
+    add r1 r1 1
+    add sp sp CellSize
+    peek r3
+    beqz r3 fetchAdd
+    bne r3 RequestHash fetchLoop # if wrong cell, continue
+    add sp sp 1
+    peek r0
+    sub sp sp 1
+fetchEnd:
+    move r1 sp
+fetchCleanup:
+    move sp r2
+    j ra
+fetchAbort:
+    move r1 0
+    j fetchCleanup
+fetchAdd:
+    sub sp sp 1
+    push RequestHash
+    j fetchEnd

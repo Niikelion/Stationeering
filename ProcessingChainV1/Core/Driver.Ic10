@@ -1,14 +1,14 @@
-# Processing Chain V1 Driver
-alias IdSelector d0
-alias ActionSelector d1
-alias IdRequester d2
-alias Id r15
-alias Action r14
-alias LastId r13
-define Idle 0
-define Select 1
-define Deselect 2
-define Empty 3
+    # Processing Chain V1 Driver
+    alias IdSelector d0
+    alias ActionSelector d1
+    alias IdRequester d2
+    alias Id r15
+    alias Action r14
+    alias LastId r13
+    define Idle 0
+    define Select 1
+    define Deselect 2
+    define Empty 3
 init:
     # Erase current command
     s IdSelector Setting -1

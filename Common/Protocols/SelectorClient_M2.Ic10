@@ -38,6 +38,11 @@ waitForReady:
     bne r0 CurrentId waitForReady
     pop ra
     j ra
+waitForTicks:
+    blez r0 ra
+    yield
+    sub r0 r0 1
+    j waitForTicks
 releaseControl:
     s SID Setting 0
     j ra
@@ -66,8 +71,3 @@ sendSCommand:
     s SValue Setting VValue
     s SAction Setting VAction
     j ra
-waitForTicks:
-    blez r0 ra
-    yield
-    sub r0 r0 1
-    j waitForTicks

@@ -37,8 +37,6 @@ init:
     push HASH("ItemNickelIngot")
     push HASH("Silicon")
     push HASH("ItemSiliconIngot")
-    push HASH("Lead")
-    push HASH("ItemLeadIngot")
     push HASH("Gold")
     push HASH("ItemGoldIngot")
     push HASH("Copper")
