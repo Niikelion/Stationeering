@@ -1,0 +1,42 @@
+    alias OxygenTank d0
+    alias HydrogenTank d1
+    alias NitrogenTank d2
+    alias NitrousOxideTank d3
+    alias WaterTank d4
+    alias RocketMode d5
+    alias Oxygen r15
+    alias Hydrogen r14
+    alias Nitrogen r13
+    alias NitrousOxide r12
+    alias Water r11
+    define MinOxygen 20000
+    define MinHydrogen 20000
+    define MinNitrogen 20000
+    define MinWater 1000
+start:
+    l Oxygen OxygenTank Pressure
+    l Hydrogen HydrogenTank Pressure
+    l Nitrogen NitrogenTank Pressure
+    l NitrousOxide NitrousOxideTank Pressure
+    l Water WaterTank VolumeOfLiquid
+    slt r0 Oxygen MinOxygen
+    slt r1 Hydrogen MinHydrogen
+    or r0 r0 r1
+    slt r1 Nitrogen MinNitrogen
+    or r0 r0 r1
+    slt r1 Water MinWater
+    or r0 r0 r1
+    bgtz r0 callRocket
+    j start
+callRocket:
+    s db Setting 1
+waitForBlastOff:
+    yield
+    l r0 RocketMode Setting
+    beqz r0 waitForBlastOff
+waitForReturn:
+    yield
+    l r0 RocketMode Setting
+    bgtz r0 waitForReturn
+    s db Setting 0
+    j ra

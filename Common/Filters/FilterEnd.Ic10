@@ -1,0 +1,7 @@
+    alias InputPump d0
+    alias PreviousModule d1
+start:
+    l r0 PreviousModule Setting
+    s InputPump On r0
+    yield
+    j start

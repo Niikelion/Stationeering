@@ -46,6 +46,7 @@ waitForRelease:
     j ra
 takeControl:
     push ra
+    l CurrentId ID Setting
 waitForReady:
     yield
     l r0 SID Setting

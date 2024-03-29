@@ -1,0 +1,71 @@
+    alias InputPump d0
+    alias Analyser d1
+    alias PreviousModule d2
+    alias MaxPressure d3
+    alias MinPressure d4
+    alias Type d5
+    alias State r15
+    alias PreviousInIdle r14
+    alias Press r13
+    alias Content r12
+    alias TypeValue r11 # 0-NitrousOxide 1-Volatiles 2-Nitrogen 3-Oxygen 4-CarbonDioxide 5-Pollutant
+    alias MaxPressureValue r10
+    alias MinPressureValue r9
+    define CondenseState 0
+    define IdleState 1
+init:
+    move State CondenseState
+    l TypeValue Type Setting
+    l MaxPressureValue MaxPressure Setting
+    l MinPressureValue MinPressure Setting
+start:
+    l Press Analyser Pressure
+    s db Setting State
+    beqal State CondenseState condense
+    beqal State IdleState idle
+    yield
+    j start
+condense:
+    push ra
+    jal fetch
+    l r0 Analyser VolumeOfLiquid
+    add Content Content r0
+    slt r0 Press MaxPressureValue
+    move r1 1
+    bdns PreviousModule skipPreviousModule
+    l r1 PreviousModule Setting
+skipPreviousModule:
+    and r1 r0 r1
+    s InputPump On r1
+    snez r1 Content
+    or r0 r0 r1
+    select State r0 CondenseState IdleState
+    pop ra
+    j ra
+idle:
+    sgt r0 Press MinPressureValue
+    select State r0 IdleState CondenseState
+    beq State IdleState ra
+    s db Setting CondenseState
+    sleep 1
+    j ra
+fetch:
+    move r0 TypeValue
+    mul r0 r0 2
+    add r0 r0 1
+    add r0 r0 types
+    j r0
+types:
+    l Content Analyser RatioNitrousOxide
+    j ra
+    l Content Analyser RatioVolatiles
+    j ra
+    l Content Analyser RatioNitrogen
+    j ra
+    l Content Analyser RatioOxygen
+    j ra
+    l Content Analyser RatioCarbonDioxide
+    j ra
+    l Content Analyser RatioPollutant
+    j ra
+    

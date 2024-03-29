@@ -1,8 +1,8 @@
     alias InputFlip d0
     alias Machine d1
-    alias IdSelector d2
-    alias ActionSelector d3
-    alias CIdSelector d4
+    alias CIdSelector d2
+    alias IdSelector d3
+    alias ActionSelector d4
     alias Id r15
     alias Action r14
     alias State r13

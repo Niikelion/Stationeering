@@ -1,0 +1,12 @@
+    alias Sensor d0
+    alias Vent d1
+    alias CarbonDioxideRatio r15
+    define MinRatio 0.025
+start:
+    l CarbonDioxideRatio Sensor RatioCarbonDioxide
+    slt r0 CarbonDioxideRatio MinRatio
+    s Vent Lock 0
+    s Vent On r0
+    s Vent PressureExternal 110
+    sleep 1
+    j start

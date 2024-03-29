@@ -8,33 +8,33 @@
     alias Action r14
     alias State r13
     alias CId r12
-    define Idle 0
-    define Selected 1
-    define Deselected 2
-    define Emptying 3
+    define IdleState 0
+    define SelectedState 1
+    define DeselectedState 2
+    define EmptyingState 3
 init:
     jal routeOut
     jal getId
-    move State Idle
+    move State IdleState
 start:
     yield
-	seq r0 State Selected
+	seq r0 State SelectedState
 	s db Setting r0
-    beqal State Selected routeIn
-    bneal State Selected routeOut
+    beqal State SelectedState routeIn
+    bneal State SelectedState routeOut
 	jal fetch
     bne CId Id start
-    beqal Action Selected selfSelect
-    beqal Action Deselected selfDeselect
-    beqal Action Emptying empty
+    beqal Action SelectedState selfSelect
+    beqal Action DeselectedState selfDeselect
+    beqal Action EmptyingState empty
     j start
 # --High level functions--
 # Select
 selfSelect:
     push ra
-    move State Selected
+    move State SelectedState
     jal routeIn
-    s ActionSelector Setting Idle
+    s ActionSelector Setting IdleState
 	s db Setting 1
     pop ra
     j ra
@@ -42,18 +42,17 @@ selfSelect:
 selfDeselect:
     push ra
 	s db Setting 0
-    move State Deselected
+    move State DeselectedState
     jal routeOut
-    s ActionSelector Setting Idle
+    s ActionSelector Setting IdleState
     pop ra
     j ra
 # Empty
 empty:
     push ra
+    push State
     move r0 0
-    s db Setting 0
-    move State Emptying
-    jal routeOut
+    move State EmptyingState
 emptyLoop:
     ls r1 Vending r0 Occupied
     beqz r1 emptyLoopEnd
@@ -65,8 +64,8 @@ emptyLoopEnd:
     mod r0 r0 100
     l r1 Vending Quantity
     bgtz r1 emptyLoop
-    s ActionSelector Setting Idle
-    move State Idle
+    s ActionSelector Setting IdleState
+    pop State
     pop ra
     j ra
 # --Low level functions--
@@ -74,17 +73,17 @@ routeIn:
     s InputFlip Mode 1
     s InputFlip Setting 1
     s InputFlip SettingOutput 0
-    s OutputFlip Mode 1
-    s OutputFlip Setting 1
-    s OutputFlip SettingOutput 0
+    s OutputFlip Mode 0
+    s OutputFlip Setting 0
+    s OutputFlip SettingOutput 1
     j ra
 routeOut:
     s InputFlip Mode 0
     s InputFlip Setting 0
     s InputFlip SettingOutput 1
-    s OutputFlip Mode 0
-    s OutputFlip Setting 0
-    s OutputFlip SettingOutput 1
+    s OutputFlip Mode 1
+    s OutputFlip Setting 1
+    s OutputFlip SettingOutput 0
     j ra
 fetch:
     l Action ActionSelector Setting

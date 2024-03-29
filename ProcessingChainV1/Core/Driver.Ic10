@@ -5,11 +5,12 @@
     alias Id r15
     alias Action r14
     alias LastId r13
-    define Idle 0
-    define Select 1
-    define Deselect 2
-    define Empty 3
+    define IdleState 0
+    define SelectState 1
+    define DeselectState 2
+    define EmptyState 3
 init:
+    move LastId -1
     # Erase current command
     s IdSelector Setting -1
     s ActionSelector Setting 0
@@ -44,7 +45,7 @@ execWait:
 transfer:
     push ra
     # Select requested device
-    move Action Select
+    move Action SelectState
     jal execute
     # Exit if does not have to empty previous device
     bltz LastId transferEnd
@@ -52,7 +53,9 @@ transfer:
     push Id
     # Empty previous device
     move Id LastId
-    move Action Empty
+    move Action DeselectState
+    jal execute
+    move Action EmptyState
     jal execute
     pop Id
 transferEnd:

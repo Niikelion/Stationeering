@@ -11,7 +11,7 @@
     define NegateOutput 0
     define NegateInput 0
 start:
-    bdse Override handleOverride
+    bdseal Override handleOverride
     s db Setting 0
     ls r0 Valve 0 Occupied
     bgtzal r0 handleInput
@@ -37,9 +37,8 @@ waitForVending:
     yield
     l r0 Vending ImportCount
     beqz r0 waitForVending
-    slt r0 ItemCount StackSize
-    and r0 r0 Stack
-    beqz r0 inputEnd # We dont need to stack
+    beqz Stack inputEnd # We dont need to stack
+    yield
     s Vending RequestHash ItemHash # Move new item to stacker
 waitForStacker:
     yield
@@ -51,12 +50,13 @@ waitForOutput:
     yield
     l r0 Stacker ExportCount
     beqz r0 waitForOutput
-    sleep 1
+    sleep 1.5
 moveExcessItems:
     move r0 0 # Route traffick in to store excess items
     jal routeOutput
     ls r0 Stacker 2 Occupied
     beqz r0 inputEnd
+    yield
     s Vending ClearMemory 1
     s Stacker Activate 1
 waitForLast:
@@ -98,6 +98,7 @@ handleOverride:
     l r0 Override Setting
     beqz r0 ra
     s db Setting -1
+    s Override Setting -1
 waitForRelease:
     yield
     l r0 Override Setting

@@ -1,0 +1,96 @@
+    alias Vending d0
+    alias InputValve d1
+    alias OutputRouter d2
+    alias Override d3 
+    alias CurrentAmount r15
+    alias LastAmount r14
+    alias MaxAmount r13
+    alias ItemHash r12
+    alias Tmp r11
+    alias Counter r10
+init:
+    s OutputRouter Setting 0
+    s OutputRouter SettingOutput 1
+    s InputValve Open 0
+start:
+    yield
+    bdseal Override handleOverride
+    s db Setting 0
+    ls r0 InputValve 0 Occupied
+    bgtzal r0 letItemIn
+    j start
+letItemIn:
+    push ra
+    s db Setting 1
+    ls ItemHash InputValve 0 OccupantHash
+    jal moveToFront
+    s InputValve Open 1
+    s db Setting 3
+    jal inputItem
+    sleep 0.1
+    move ItemHash 0
+    jal removeFullStacks
+letItemInEnd:
+    pop ra
+    yield
+    j ra
+removeFullStacks:
+    s db Setting 4
+    move Counter 2
+removeLoop:
+    ls r1 Vending Counter Occupied
+    beqz r1 removeLoopEnd
+    ls CurrentAmount Vending Counter Quantity
+    ls MaxAmount Vending Counter MaxQuantity
+    bne CurrentAmount MaxAmount removeLoopEnd
+    ls ItemHash Vending Counter OccupantHash
+    push ra
+    s OutputRouter Mode 1
+    jal outputItem
+    pop ra
+    add Counter Counter 1
+    j ra
+removeLoopEnd:
+    add Counter Counter 1
+    ble Counter 101 removeLoop
+    j ra
+moveToFront:
+    s db Setting 2
+    move Counter 2
+moveLoop:
+    ls r1 Vending Counter Occupied
+    beqz r1 moveLoopEnd
+    ls r2 Vending Counter OccupantHash
+    bne r2 ItemHash moveLoopEnd
+    push ra
+    jal outputItem
+    jal inputItem
+    pop ra
+    j ra
+moveLoopEnd:
+    add Counter Counter 1
+    ble Counter 101 moveLoop
+    j ra
+handleOverride:
+    l r0 Override Setting
+    beqz r0 ra
+    s db Setting -1
+    s Override Setting -1
+    s InputValve Open 0
+    yield
+    j handleOverride
+outputItem:
+    s Vending RequestHash ItemHash
+    s Vending ClearMemory 1
+waitForOutput:
+    yield
+    l Tmp Vending ExportCount
+    beqz Tmp waitForOutput
+    j ra
+inputItem:
+    s Vending ClearMemory 1
+waitForInput:
+    yield
+    l Tmp Vending ImportCount
+    beqz Tmp waitForInput
+    j ra

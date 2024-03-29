@@ -1,0 +1,22 @@
+    alias Centrifuge d0
+    alias Content r15
+    alias IsOpen r14
+    alias IsError r13
+start:
+    yield
+    l Content Centrifuge Reagents
+    l IsOpen Centrifuge Open
+    l IsError Centrifuge Error
+    seqz r0 Content
+    and r0 r0 IsOpen
+    bnezal r0 close
+    xor r0 IsOpen 1
+    and r0 r0 IsError
+    bnezal r0 open
+    j start
+open:
+    s Centrifuge Open 1
+    j ra
+close:
+    s Centrifuge Open 0
+    j ra

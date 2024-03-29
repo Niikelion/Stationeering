@@ -10,20 +10,25 @@
     alias Callback r12
     define WaitTicks 5
 init:
-    l CurrentId SID Setting
+    l CurrentId Id Setting
     s Action Setting 0
     s Value Setting 0
 start:
+    s db Setting -1
     yield
     move VValue 0 # Use as previous command
     move Callback readCommand # Wait for change in command
+    s db Setting -2
     jal waitForCommand
+    s db Setting -3
     jal takeControl # Take control
     jal sendSCommand # Send it to shared bus
+    s db Setting VValue
     move Callback readSCommand # Wait for response
+    s db Setting -4
     jal waitForCommand
     jal sendCommand # Send it back to source bus
-    jal releaseControl # Release controll
+    jal releaseControl # Release control
     j start
 takeControl:
     push ra
@@ -51,7 +56,7 @@ waitForCommand:
 waitForCommandLoop:
     yield
     move r0 VValue
-    jal Reader
+    jal Callback
     beq VValue r0 waitForCommandLoop
     pop ra
     j ra

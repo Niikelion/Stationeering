@@ -1,0 +1,41 @@
+    alias Tank d0
+    alias GasSensor d1
+    alias Condenser d3
+    alias Evaporator d4
+    alias Temp r15
+    alias LiquidOxygen r14
+    alias Condensing r12
+    alias Cooling r11
+    define MinOxygen 1000
+    define MaxOxygen 2000
+    define MinTemp 290
+    define MaxTemp 296
+start:
+    jal fetch
+    bnezal Condensing condensingOxygen
+    beqzal Condensing notCondensingOxygen
+    s Condenser On Condensing
+    bnezal Cooling coolingBase
+    beqzal Cooling notCoolingBase
+    s Evaporator On Cooling
+    mul r0 Cooling 1000
+    add r0 r0 Temp
+    s db Setting r0
+    yield
+    j start
+fetch:
+    l Temp GasSensor Temperature
+    l LiquidOxygen Tank VolumeOfLiquid
+    j ra
+condensingOxygen:
+    slt Condensing LiquidOxygen MaxOxygen
+    j ra
+notCondensingOxygen:
+    slt Condensing LiquidOxygen MinOxygen
+    j ra
+coolingBase:
+    sgt Cooling Temp MinTemp
+    j ra
+notCoolingBase:
+    sgt Cooling Temp MaxTemp
+    j ra

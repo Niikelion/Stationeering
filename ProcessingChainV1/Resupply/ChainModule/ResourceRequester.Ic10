@@ -1,14 +1,16 @@
     alias ResourceInfoRequester d0
     alias ResourceRequester d1
+    alias Id d2
+    alias RouteId d3
     alias Count r15
     alias Current r14
     alias CurrentResource r13
     alias Ticks r12
+    alias MaxTransferTicks r11
     alias TranslatedResource r11
     define MinAmount 500
-    define MaxTicks 20
-    define MaxTransferTicks 30
     define Translate 1
+    define TransferTicks 5
 init:
     s db Setting -1000
     push HASH("Hastelloy")
@@ -81,28 +83,24 @@ getResource:
     move sp r1
     j ra
 requestResource:
+    l r0 Id Setting
+    s RouteId Setting r0
     s ResourceRequester Setting TranslatedResource
-    move Ticks MaxTicks
-    move r1 1
 waitForRequest:
     yield
     l r0 ResourceRequester Setting
-    beqz r0 resourceRequestAbandon
+    beq r0 0 resourceRequestAbandon
     beq r0 1 resourceRequestEnd
-    sub Ticks Ticks 1
-    s db Setting Ticks
-    bgtz Ticks waitForRequest
-    move r1 0
-    j resourceRequestEnd
+    j waitForRequest
 resourceRequestAbandon:
-    s ResourceRequester Setting -1
+    s ResourceRequester Setting 0
     move r0 0
     j ra
 resourceRequestEnd:
-    s ResourceRequester Setting -1
+    s ResourceRequester Setting 0
     move r0 0
-    beqz r1 ra
     push ra
+    move MaxTransferTicks TransferTicks
     move Ticks MaxTransferTicks
     jal getInfo
 sendLoop:

@@ -7,6 +7,8 @@
     alias Produced r14
     alias ItemHash r13
     alias IsLathe r12
+    alias LastProgress r11
+    alias Counter r10
 init:
     # Check if machine is Autolathe
     l r0 Machine PrefabHash
@@ -31,6 +33,7 @@ produce:
     s Machine ClearMemory 1
     yield
     s Machine ClearMemory 0
+    l LastProgress Machine CompletionRatio
 loop:
     s Machine Activate 1
     yield
@@ -42,6 +45,17 @@ loop:
     # Show remaining amount
     s db Setting r0
     s db:0 Channel1 r0
+waitReset:
+    move Counter 10
+    l r0 Machine CompletionRatio
+    bne r0 LastProgress skipReset
+    sub Counter Counter 1
+    sleep 1
+    bgtz Counter waitReset
+    s Machine Activate 0
+    yield
+skipReset:
+    move LastProgress r0
     # Wait for all items before finishing
     blt Produced Count loop
     s CountSelector Setting 0

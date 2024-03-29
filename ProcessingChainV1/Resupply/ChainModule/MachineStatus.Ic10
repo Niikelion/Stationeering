@@ -6,7 +6,9 @@
 init:
     move LastImport -1
 start:
+    s db Setting 0
     jal waitForActive
+    s db Setting 1
     move LastImport 0
     jal waitForResources
     jal waitForFull

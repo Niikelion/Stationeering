@@ -1,0 +1,41 @@
+    alias ExtSensor d0
+    alias IntSensor d1
+    alias InPump d2
+    alias OutPump d3
+    alias ExtPressure r15
+    alias ExtTemperature r14
+    alias IntPressure r13
+    alias IntTemperature r12
+    define MinExtTemp 293
+    define MaxExtTemp 298
+    define MaxIntTemp 200
+    define MaxIntPressure 40000
+    define MinIntPressure 5000
+init:
+    s InPump On 0
+    s OutPump On 0
+cool:
+    jal fetch
+    blt ExtTemperature MinExtTemp idle
+    sgt r0 IntPressure MaxIntPressure
+    s OutPump On r0
+    slt r0 IntPressure MinIntPressure
+    sgt r1 IntTemperature MaxIntTemp
+    or r0 r0 r1
+    s InPump On r0
+    yield
+    j cool
+idle:
+    jal fetch
+    bgt ExtTemperature MaxExtTemp cool
+    snez r0 IntPressure
+    s OutPump On r0
+    s InPump On 0
+    yield
+    j idle
+fetch:
+    l ExtPressure ExtSensor Pressure
+    l ExtTemperature ExtSensor Temperature
+    l IntPressure IntSensor Pressure
+    l IntTemperature IntSensor Temperature
+    j ra

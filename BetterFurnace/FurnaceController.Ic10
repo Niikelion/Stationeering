@@ -9,10 +9,11 @@
     alias ExtPress r13
     alias Ready r12
     alias LastImport r11
+    define MinExtPress 200
     define MaxPress 50000
     define MaxInPress 50000
     define MinInPress 20000
-    define MinTemp 1500
+    define MinTemp 1300
     define MinOpenTemp 1000
 start:
     jal emptyGasses
@@ -94,8 +95,9 @@ inputGasses:
     push ra
 waitForPressure:
     yield
+    s Furnace Activate 1
     jal fetchData
-    sgtz r0 ExtPress
+    sgt r0 ExtPress MinExtPress
     slt r1 Press MaxInPress
     and r0 r0 r1
     bnez r0 waitForPressure
