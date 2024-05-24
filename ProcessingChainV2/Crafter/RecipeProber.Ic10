@@ -1,0 +1,58 @@
+# RecipeProber - translates recipe id to device id
+# protocol: >recipe (<0 | <device >0)
+alias RecipeRequest db
+alias MachineCount r15
+alias Counter r14
+alias RequestedHash r13
+alias Device r12
+alias SubProc r11
+init:
+push HASH("StructureHydraulicPipeBender")
+push HASH("StructureElectronicsPrinter")
+push HASH("StructureToolManufactory")
+push HASH("StructureRocketManufactory")
+push HASH("StructureSecurityPrinter")
+push HASH("StructureAutolathe")
+move MachineCount sp
+waitForRequest:
+yield
+l RequestedHash RecipeRequest Setting
+beqz RequestedHash waitForRequest
+# request received
+# iterate all devices and request given recipe
+move SubProc primeMachine
+jal iterateDevices
+yield
+move SubProc readMachine
+jal iterateDevices
+s RecipeRequest Setting 0 # request marked as failed
+j waitForRequest
+
+iterateDevices:
+push ra
+move Counter 0
+iterateLoop:
+get Device db Counter
+lb r0 Device On Sum # get number of devices
+beqz r0 skipDevice # skip if not found
+jal SubProc
+skipDevice:
+add Counter Counter 1
+blt Counter MachineCount iterateLoop
+pop ra
+j ra
+
+primeMachine:
+sb Device RecipeHash RequestedHash # request recipe in machine
+j ra
+
+readMachine:
+lb r0 Device RecipeHash Average
+bne r0 RequestedHash ra
+s RecipeRequest Setting Device # respond with device
+waitForReceive:
+yield
+l r0 RecipeRequest Setting
+bnez r0 waitForReceive
+pop ra
+j waitForRequest

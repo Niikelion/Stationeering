@@ -1,0 +1,46 @@
+# Buffer - buffers crafting recipes
+# protocol: d0>recipe d1>count d0<0 | d2>0 (d2<0 | d3<count d2<recipe)
+alias EnqueueItem d0
+alias EnqueueCount d1
+alias DequeueItem d2
+alias DequeueCount d3
+alias Overflow db
+alias Item r15
+alias Count r14
+alias Length r13
+alias Start r12
+alias End r11
+define MaxLength 256
+start:
+yield
+s Overflow Setting Length
+l Item EnqueueItem Setting
+l Count EnqueueCount Setting
+bnezal Item enqueue # enqueue if item is not 0
+l r0 DequeueItem Setting
+beqal r0 0 dequeue # dequeue if request is 0
+j start
+
+dequeue:
+beqz Length ra # return if no elements to dequeue
+sub Length Length 1
+add Start Start 2
+move sp Start
+pop Count
+pop Item
+s DequeueCount Setting Count
+s DequeueItem Setting Item
+j ra
+
+enqueue:
+sge r0 Length MaxLength
+#s Overflow Setting r0
+bgtz r0 ra # exit if overflow
+s EnqueueItem Setting 0
+add Length Length 1
+move sp End
+push Item
+push Count
+add End End 2
+mod End End 512
+j ra

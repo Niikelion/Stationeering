@@ -1,0 +1,80 @@
+# Driver - coordinates machine selection and resource flow
+# protocol: d0>device (db<device d0<0 | d0<1)
+alias DeviceSelect d0
+alias Input d1
+alias SelectedDevice r15
+alias LastDevice r14
+alias Direction r13
+alias Router r12
+define RouterType HASH("StructureChuteDigitalFlipFlopSplitterRight")
+init:
+l LastDevice db Setting
+start:
+bdseal Input handleInput
+jal handleRequest
+yield
+j start
+
+handleInput:
+l r0 Input Occupied
+beqz r0 ra
+s Input ClearMemory 1
+sb LastDevice ClearMemory 1
+yield
+s Input Open 1
+waitForTransfer:
+yield
+l r0 Input Occupied
+s Input Open r0 # open if occupied
+bnez r0 waitForTransfer # wait for all items to go in
+l r0 Input ExportCount
+lb r1 LastDevice ImportCount Sum
+bne r0 r1 waitForTransfer # wait for all items to go to machine
+j ra
+
+handleRequest:
+push ra
+# wait for request
+l SelectedDevice DeviceSelect Setting
+beqz SelectedDevice endRequest
+beq SelectedDevice LastDevice skipEmpty
+lb r0 SelectedDevice On Sum
+beqz r0 signalError
+move Router SelectedDevice # start route
+move Direction 1
+jal route # route in for current device
+beqz LastDevice skipEmpty
+move Router LastDevice # start route
+move Direction 0
+jal route # route out from previous device
+# empty last device
+sb LastDevice ClearMemory 1
+sb LastDevice Open 1
+waitForEmpty:
+yield
+lb r0 LastDevice Reagents Sum
+bnez r0 waitForEmpty
+lb r0 LastDevice ExportCount Sum
+waitForFull:
+yield
+lb r1 SelectedDevice ImportCount Sum
+bne r0 r1 waitForFull
+sb LastDevice Open 0
+skipEmpty:
+move LastDevice SelectedDevice
+# indicate end of operation
+s db Setting SelectedDevice
+s DeviceSelect Setting 0
+j endRequest
+signalError:
+s DeviceSelect Setting 1
+endRequest:
+pop ra
+j ra
+
+route:
+sbn RouterType Router Setting Direction
+sbn RouterType Router Mode Direction
+xor Direction Direction 1
+sbn RouterType Router SettingOutput Direction
+j ra
