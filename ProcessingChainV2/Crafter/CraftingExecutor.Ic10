@@ -2,113 +2,127 @@
 # protocol(-RequestFallback,-CountFallback): d0>recipe d1>count d2<recipe (d2>0                         | d2>machine d2<0) (d0<0 d1<0 | d1>0 d0<0)
 # protocol(+RequestFallback,+CountFallback): d0>recipe d1>count d2<recipe (d2>0 d4<count d3<recipe d3>0 | d2>machine d2<0) (d0<0 d1<0 | d1>0 d0<0)
 # broadcast: channel1<recipe channel2<count
-alias RecipeRequest d0
-alias RecipeCount d1
-alias RecipeProber d2
-alias RequestFallback d3
-alias CountFallback d4
-alias DeviceSelector d5
-alias RequestItem r15
-alias RequestCount r14
-alias RequestMachine r13
-alias Crafted r12
-alias LastProgress r11
-alias CurrentProgress r10
-alias StaleCounter r9
-alias OutputStacker r8
-alias Outputted r7
-define MaxStale 20
-define Out HASH("Output")
-define StackerH HASH("StructureStacker")
-define StackerRevH HASH("StructureStackerReverse")
+    alias RecipeRequest d0
+    alias RecipeCount d1
+    alias RecipeProber d2
+    alias RequestFallback d3
+    alias CountFallback d4
+    alias DeviceSelector d5
+    alias RequestItem r15
+    alias RequestCount r14
+    alias RequestMachine r13
+    alias Crafted r12
+    alias LastProgress r11
+    alias CurrentProgress r10
+    alias StaleCounter r9
+    alias OutputStacker r8
+    alias Outputted r7
+    alias StackSize r6
+    define MaxStale 20
+    define Out HASH("Output")
+    define StackerH HASH("StructureStacker")
+    define StackerRevH HASH("StructureStackerReverse")
 waitForRequest:
-yield
-l RequestItem RecipeRequest Setting
-beqz RequestItem waitForRequest # wait for incomming request
-l RequestCount RecipeCount Setting # load count
-jal findMachine
-beqz RequestMachine handleError
-# machine is ready, activate crafting and watch count
-s db:0 Channel1 RequestItem
-s db:0 Channel2 RequestCount
-move StaleCounter 0
-move CurrentProgress 0
-move LastProgress 0
-jal fetchValve
-sb RequestMachine ClearMemory 1
-sd OutputStacker ClearMemory 1
-move Outputted 0
+    yield
+    l RequestItem RecipeRequest Setting
+    beqz RequestItem waitForRequest # wait for incomming request
+    l RequestCount RecipeCount Setting # load count
+    jal findMachine
+    beqz RequestMachine handleError
+    s db:0 Channel1 RequestItem # machine is ready, activate crafting and watch count
+    s db:0 Channel2 RequestCount
+    move StaleCounter 0
+    move CurrentProgress 0
+    move LastProgress 0
+    jal fetchStacker
+    sb RequestMachine ClearMemory 1
+    sd OutputStacker ClearMemory 1
+    sd OutputStacker Mode 1
+    move Outputted 0
+    move Crafted 0
 waitForCrafting:
-yield
-sb RequestMachine Activate 1
-ld Crafted RequestMachine ExportCount Sum
-jal handleCancel
-sub r0 RequestCount Crafted
-s db:0 Channel2 r0 # show remaining count
-jal handleStale
-jal updateStacker
-blt Crafted RequestCount waitForCrafting # wait for all items to be emitted
-sb RequestMachine Activate 0 # stop crafting
+    yield
+    sb RequestMachine Activate 1
+    lb Crafted RequestMachine ExportCount Sum
+    jal handleCancel
+    sub r0 RequestCount Crafted
+    s db:0 Channel2 r0 # show remaining count
+    jal handleStale
+    jal updateStacker
+    blt Crafted RequestCount waitForCrafting # wait for all items to be emitted
+    sb RequestMachine Activate 0 # stop crafting
 waitForOutput:
-yield
-ld r0 OutputSplit Quantity
-bne r0 RequestCount waitForOutput
-j end
+    yield
+    jal updateStacker
+    bne Outputted RequestCount waitForOutput
+    j end
 handleError:
-bdns RequestFallback end
-bdns CountFallback end
-# send recipe to fallback
-s CountFallback Setting RequestCount
-s RequestFallback Setting RequestItem
+    bdns RequestFallback end # send recipe to fallback
+    bdns CountFallback end
+    s CountFallback Setting RequestCount
+    s RequestFallback Setting RequestItem
 waitForErrorEnd:
-yield
-l r0 RequestFallback Setting
-bnez r0 waitForErrorEnd # wait for consumption
+    yield
+    l r0 RequestFallback Setting
+    bnez r0 waitForErrorEnd # wait for consumption
 end:
-s RecipeRequest Setting 0 # finish request
-s RecipeCount Setting 0
-s db:0 Channel1 0
-s db:0 Channel2 0
-j waitForRequest
-
+    s RecipeRequest Setting 0 # finish request
+    s RecipeCount Setting 0
+    s db:0 Channel1 0
+    s db:0 Channel2 0
+    j waitForRequest
 findMachine:
-s RecipeProber Setting RequestItem
+    s RecipeProber Setting RequestItem
 waitForMachine:
-yield
-l RequestMachine RecipeProber Setting
-beq RequestMachine RequestItem waitForMachine
-s RecipeProber Setting 0
-beqz RequestMachine ra
-s DeviceSelector Setting RequestMachine
+    yield
+    l RequestMachine RecipeProber Setting
+    beq RequestMachine RequestItem waitForMachine
+    s RecipeProber Setting 0
+    beqz RequestMachine ra
+    s DeviceSelector Setting RequestMachine
 waitForActive:
-yield
-l r0 DeviceSelector Setting
-bnez r0 waitForActive
-j ra
-
+    yield
+    l r0 DeviceSelector Setting
+    bnez r0 waitForActive
+    j ra
 handleCancel:
-l r0 RecipeCount Setting
-bnez r0 ra
-sub RequestCount RequestCount Crafted
-j handleError
-
+    l r0 RecipeCount Setting
+    bnez r0 ra
+    move r0 RequestCount
+    sub Crafted RequestCount Crafted
+waitForCancelOutput:
+    yield
+    jal updateStacker
+    bne Outputted Crafted waitForCancelOutput
+    move RequestCount Crafted
+    j handleError
 handleStale:
-lb CurrentProgress RequestMachine CompletionRatio Sum
-bne CurrentProgress LastProgress notStale
-add StaleCounter StaleCounter 1
-blt StaleCounter MaxStale ra
-sb RequestMachine Activate 0 # request is stale, reset machine
+    lb CurrentProgress RequestMachine CompletionRatio Sum
+    bne CurrentProgress LastProgress notStale
+    add StaleCounter StaleCounter 1
+    blt StaleCounter MaxStale ra
+    sb RequestMachine Activate 0 # request is stale, reset machine
 notStale:
-move LastProgress CurrentProgress
-move StaleCounter 0
-j ra
-
-fetchValve:
-lbn OutputStacker StackerH Out ReferenceId Minimum
-bnez OutputStacker ra
-lbn OutputStacker StackerRevH Out ReferenceId Minimum
-j ra
-
+    move LastProgress CurrentProgress
+    move StaleCounter 0
+    j ra
+fetchStacker:
+    lbn OutputStacker StackerH Out ReferenceId Minimum
+    bnez OutputStacker ra
+    lbn OutputStacker StackerRevH Out ReferenceId Minimum
+    j ra
 updateStacker:
-
-j ra
+    ld r1 OutputStacker PrefabHash
+    lbns r0 r1 Out 2 Occupied Minimum
+    beqz r0 ra # no item, early return
+    lbns StackSize r1 Out 2 MaxQuantity Minimum
+    lbns r0 r1 Out 2 Quantity Minimum
+    seq r2 StackSize r0
+    add r0 Outputted r0
+    seq r1 r0 RequestCount
+    or r2 r2 r1
+    s db Setting r0
+    beqz r2 ra
+    move Outputted r0
+    sd OutputStacker Activate 1
+    j ra
