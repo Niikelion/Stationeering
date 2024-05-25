@@ -121,7 +121,6 @@ updateStacker:
     add r0 Outputted r0
     seq r1 r0 RequestCount
     or r2 r2 r1
-    s db Setting r0
     beqz r2 ra
     move Outputted r0
     sd OutputStacker Activate 1
