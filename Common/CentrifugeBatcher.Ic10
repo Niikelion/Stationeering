@@ -1,0 +1,14 @@
+    alias Centrifuge d0
+    alias ReagentCount r15
+    define MaxReagents 1000
+start:
+    yield
+    l ReagentCount Centrifuge Reagents
+    blt ReagentCount MaxReagents start
+    s Centrifuge Open 1
+empty:
+    yield
+    l ReagentCount Centrifuge Reagents
+    bgtz ReagentCount empty
+    s Centrifuge Open 0
+    j start

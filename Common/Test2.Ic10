@@ -1,0 +1,110 @@
+    alias Item r15
+    alias Negate r14
+    alias CurrentF r13
+    alias LastStack r12
+    alias Count r11
+init:
+    add sp sp 12
+    move Negate 1
+    push HASH("ItemKitChute")
+    jal pushConfig
+    move Negate 0
+    push HASH("ItemIronSheets")
+    jal pushConfig
+start:
+    add CurrentF CurrentF 1
+    mod CurrentF CurrentF 6
+    jal isNotSet
+    bgtz r0 start
+    jal readContent
+    
+startEnd:
+    yield
+    j start
+findItem:
+    move sp 0
+    move r0 0
+findLoop:
+    add sp sp 1
+    bgt sp Count ra
+    peek r0
+    seq r0 r0 Item
+    bgtz r0 ra
+    j findLoop
+pushConfig:
+    move r0 sp
+    sub r1 r0 LastStack
+    move sp CurrentF
+    push r1
+    push Negate
+    add CurrentF CurrentF 1
+    move sp r0
+    move LastStack r0
+    j ra
+readContent:
+    mul r0 CurrentF 2
+    add r0 r0 1
+    jr r0
+    ls Item d0 0 OccupantHash
+    j ra
+    ls Item d1 0 OccupantHash
+    j ra
+    ls Item d2 0 OccupantHash
+    j ra
+    ls Item d3 0 OccupantHash
+    j ra
+    ls Item d4 0 OccupantHash
+    j ra
+    ls Item d5 0 OccupantHash
+    j ra
+route:
+    xor r0 r0 Negate
+    mul r1 CurrentF 5
+    add r1 r1 1
+    jr r1
+    s d0 Mode r0
+    s d0 Setting r0
+    xor r0 r0 1
+    s d0 SettingOutput r0
+    j ra
+    s d1 Mode r0
+    s d1 Setting r0
+    xor r0 r0 1
+    s d1 SettingOutput r0
+    j ra
+    s d2 Mode r0
+    s d2 Setting r0
+    xor r0 r0 1
+    s d2 SettingOutput r0
+    j ra
+    s d3 Mode r0
+    s d3 Setting r0
+    xor r0 r0 1
+    s d3 SettingOutput r0
+    j ra
+    s d4 Mode r0
+    s d4 Setting r0
+    xor r0 r0 1
+    s d4 SettingOutput r0
+    j ra
+    s d5 Mode r0
+    s d5 Setting r0
+    xor r0 r0 1
+    s d5 SettingOutput r0
+    j ra
+isNotSet:
+    mul r0 CurrentF 2
+    add r0 r0 1
+    jr r0
+    sdns r0 d0
+    j ra
+    sdns r0 d1
+    j ra
+    sdns r0 d2
+    j ra
+    sdns r0 d3
+    j ra
+    sdns r0 d4
+    j ra
+    sdns r0 d5
+    j ra

@@ -1,0 +1,17 @@
+    alias Vending d0
+    alias RouteIn d1
+    define MaxItems 98
+    define NegateOutput 0
+start:
+    yield
+    l r0 Vending Quantity
+    sle r0 r0 MaxItems
+    jal routeOutput
+    j start
+routeOutput:
+    xor r0 r0 NegateOutput
+    s RouteIn Mode r0
+    s RouteIn Setting r0
+    xor r0 r0 1
+    s RouteIn SettingOutput r0
+    j ra

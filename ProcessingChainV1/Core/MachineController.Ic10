@@ -1,8 +1,8 @@
     alias InputFlip d0
     alias Machine d1
-    alias IdSelector d2
-    alias ActionSelector d3
-    alias CIdSelector d4
+    alias CIdSelector d2
+    alias IdSelector d3
+    alias ActionSelector d4
     alias Id r15
     alias Action r14
     alias State r13
@@ -29,7 +29,8 @@ start:
     beqal Action Deselected selfDeselect
     beqal Action Emptying empty
     j start
-#high level functions
+# --High level functions--
+# Select
 selfSelect:
     push ra
     move State Selected
@@ -38,6 +39,7 @@ selfSelect:
 	s db Setting 1
     pop ra
     j ra
+# Deselect
 selfDeselect:
     push ra
 	s db Setting 0
@@ -46,13 +48,14 @@ selfDeselect:
     s ActionSelector Setting Idle
     pop ra
     j ra
+# Empty
 empty:
     push ra
 	s db Setting 0
     move State Emptying
+    jal routeOut
     jal open
 emptyLoop:
-    jal routeOut
     jal contents
     bnez Ret emptyLoop
     move State Idle
@@ -60,7 +63,7 @@ emptyLoop:
     jal close
     pop ra
     j ra
-#low level functions
+# --Low level functions--
 open:
     s Machine Open 1
 	sleep 1
@@ -88,5 +91,4 @@ getId:
     j ra
 contents:
     l Ret Machine Reagents
-    j ra
     j ra

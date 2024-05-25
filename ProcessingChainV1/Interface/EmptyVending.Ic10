@@ -1,0 +1,51 @@
+    alias IdSelector d0
+    alias VendingId d1
+    alias EmptyButton d2
+    alias ActionSelector d3
+    alias IdRequester d4
+    alias Id r15
+    alias Action r14
+    define IdleState 0
+    define SelectState 1
+    define DeselectState 2
+    define EmptyState 3
+waitForPress:
+    yield
+    l r0 EmptyButton Setting
+    beqz r0 waitForPress
+    l Id VendingId Setting
+    jal selectMachine
+    sleep 5
+    l Id VendingId Setting
+    move Action EmptyState
+    jal execute
+    move Id 1
+    jal selectMachine
+waitForRelease:
+    yield
+    l r0 EmptyButton Setting
+    bgtz r0 waitForRelease
+    j waitForPress
+# Select machine
+selectMachine:
+    s IdRequester Setting Id
+waitForSelect:
+    yield
+    l Id IdRequester Setting
+    bne Id -1 waitForSelect
+    j ra
+# Execute command
+execute:
+    yield
+    # Wait for end of previous action
+    l r0 ActionSelector Setting
+    bnez r0 execute
+    # Send action
+    s IdSelector Setting Id
+    s ActionSelector Setting Action
+execWait:
+    # Wait for action to end
+    yield
+    l r0 ActionSelector Setting
+    bnez r0 execWait
+    j ra

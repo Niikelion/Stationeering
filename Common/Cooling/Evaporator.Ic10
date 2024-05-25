@@ -1,0 +1,16 @@
+    alias GasSensor d0
+    alias Evaporator d1
+    alias Valve d2
+    alias TargetTemp d3
+    alias Temp r15
+    alias TargetTempValue r10
+    l TargetTempValue TargetTemp Setting
+start:
+    l Temp GasSensor Temperature
+    sgt r0 Temp TargetTempValue
+    s Evaporator On r0
+    bdns Valve skipValve
+    s Valve On r0
+skipValve:
+    yield
+    j start

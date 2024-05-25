@@ -1,0 +1,94 @@
+    alias InputFlip d0
+    alias Vending d1
+    alias IdSelector d2
+    alias ActionSelector d3
+    alias CIdSelector d4
+    alias OutputFlip d5
+    alias Id r15
+    alias Action r14
+    alias State r13
+    alias CId r12
+    define IdleState 0
+    define SelectedState 1
+    define DeselectedState 2
+    define EmptyingState 3
+init:
+    jal routeOut
+    jal getId
+    move State IdleState
+start:
+    yield
+	seq r0 State SelectedState
+	s db Setting r0
+    beqal State SelectedState routeIn
+    bneal State SelectedState routeOut
+	jal fetch
+    bne CId Id start
+    beqal Action SelectedState selfSelect
+    beqal Action DeselectedState selfDeselect
+    beqal Action EmptyingState empty
+    j start
+# --High level functions--
+# Select
+selfSelect:
+    push ra
+    move State SelectedState
+    jal routeIn
+    s ActionSelector Setting IdleState
+	s db Setting 1
+    pop ra
+    j ra
+# Deselect
+selfDeselect:
+    push ra
+	s db Setting 0
+    move State DeselectedState
+    jal routeOut
+    s ActionSelector Setting IdleState
+    pop ra
+    j ra
+# Empty
+empty:
+    push ra
+    push State
+    move r0 0
+    move State EmptyingState
+emptyLoop:
+    ls r1 Vending r0 Occupied
+    beqz r1 emptyLoopEnd
+    ls r1 Vending r0 OccupantHash
+    s Vending RequestHash r1
+    sleep 1
+emptyLoopEnd:
+    add r0 r0 1
+    mod r0 r0 100
+    l r1 Vending Quantity
+    bgtz r1 emptyLoop
+    s ActionSelector Setting IdleState
+    pop State
+    pop ra
+    j ra
+# --Low level functions--
+routeIn:
+    s InputFlip Mode 1
+    s InputFlip Setting 1
+    s InputFlip SettingOutput 0
+    s OutputFlip Mode 0
+    s OutputFlip Setting 0
+    s OutputFlip SettingOutput 1
+    j ra
+routeOut:
+    s InputFlip Mode 0
+    s InputFlip Setting 0
+    s InputFlip SettingOutput 1
+    s OutputFlip Mode 1
+    s OutputFlip Setting 1
+    s OutputFlip SettingOutput 0
+    j ra
+fetch:
+    l Action ActionSelector Setting
+    l Id IdSelector Setting
+    j ra
+getId:
+    l CId CIdSelector Setting
+    j ra

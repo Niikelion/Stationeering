@@ -1,0 +1,68 @@
+    alias ValveIn d0
+    alias ValveOut d1
+    alias Value d2
+    alias Action d3
+    alias SID d4
+    alias ID d5
+    alias CurrentId r15
+    alias VValue r14
+    alias VAction r13
+    define WaitTicks 5
+start:
+    yield
+    ls r0 ValveIn 0 Occupied
+    bnez r0 handleIn
+    ls r0 ValveOut 0 Occupied
+    bnez r0 handleOut
+    j start
+handleIn:
+    push ra
+    ls VValue ValveIn 0 Quantity
+    ls VAction ValveIn 0 OccupantHash
+    s ValveIn Open 1
+    jal updateCount
+    pop ra
+    j ra
+handleOut:
+    push ra
+    ls VValue ValveOut 0 Quantity
+    mul VValue VValue -1
+    ls VAction ValveOut 0 OccupantHash
+    jal updateCount
+    s ValveOut Open 1
+    pop ra
+    j ra
+updateCount:
+    push ra
+    jal takeControl
+    s Value Setting VValue
+    s Action Setting VAction
+waitForRelease:
+    yield
+    l r0 Action Setting
+    bnez r0 waitForRelease
+    jal releaseControl
+    pop ra
+    j ra
+takeControl:
+    push ra
+    l CurrentId ID Setting
+waitForReady:
+    yield
+    l r0 SID Setting
+    bne r0 0 waitForReady
+    s SID Setting CurrentId
+    move r0 WaitTicks
+    jal waitForTicks
+    l r0 SID Setting
+    bne r0 CurrentId waitForReady
+    pop ra
+    j ra
+waitForTicks:
+    blez r0 ra
+    yield
+    sub r0 r0 1
+    j waitForTicks
+releaseControl:
+    s SID Setting 0
+    j ra

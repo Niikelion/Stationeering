@@ -1,0 +1,15 @@
+    alias Analyser d0
+    alias Crusher d1
+    alias Liquid r15
+    alias Press r14
+    define MaxPressure 10000
+    define MaxLiquid 0.5
+start:
+    l Liquid Analyser VolumeOfLiquid
+    l Press Analyser Pressure
+    slt r0 Liquid MaxLiquid
+    slt r1 Press MaxPressure
+    and r0 r0 r1
+    s Crusher On r0
+    yield
+    j start

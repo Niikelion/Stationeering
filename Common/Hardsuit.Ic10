@@ -1,0 +1,16 @@
+    alias Helmet d0
+start:
+    l r1 db PressureExternal
+    bltal r1 26 helmetClose
+    l r1 db TemperatureExternal
+    bltal r1 273.15 helmetClose
+    l r0 Helmet Open
+    nor r0 r0 0
+    s db Filtration r0
+    s db AirRelease r0
+    s db On r0
+    sleep 0.1
+    j start
+helmetClose:
+    s Helmet Open 0
+    j ra

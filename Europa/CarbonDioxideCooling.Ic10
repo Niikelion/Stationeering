@@ -1,0 +1,16 @@
+    alias Filter d0
+    alias InputTank d1
+    alias OutputTank d2
+    alias InputRatio r15
+    alias OutputPressure r14
+    define MinInputRatio 0.01
+    define MaxOutputPressure 40000
+start:
+    l InputRatio InputTank RatioCarbonDioxide
+    l OutputPressure OutputTank Pressure
+    sgt r0 InputRatio MinInputRatio
+    slt r1 OutputPressure MaxOutputPressure
+    and r0 r0 r1
+    s Filter On r0
+    sleep 1
+    j start

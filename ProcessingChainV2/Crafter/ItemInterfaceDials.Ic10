@@ -1,0 +1,40 @@
+# ItemInterfaceDials - interface for inputing items with count selection as dials
+# protocol(-Confirm): d0>recipe      d3>hundreds d4>tens d5>ones d2<count db<recipe      d0<0
+# protocol(+Confirm): d0>recipe d2>1 d3>hundreds d4>tens d5>ones d2<count db<recipe d2>0 d0<0
+alias RequestItem d0
+alias ItemCount d1
+alias OutputItem db
+alias Confirm d2
+alias HundredsDial d3
+alias TensDial d4
+alias OnesDial d5
+alias Count r15
+alias RequestedHash r14
+define HashD HASH("StructureLogicHashGen")
+start:
+yield
+l RequestedHash RequestItem Setting
+beqz RequestedHash start # wait for request
+bdns Confirm skipConfirm
+l r0 Confirm Setting
+beqz r0 start
+skipConfirm:
+l Count HundredsDial Setting
+mul Count Count 10
+l r0 TensDial Setting
+add Count Count r0
+l r0 OnesDial Setting
+mul Count Count 10
+add Count Count r0
+s ItemCount Setting Count
+s OutputItem Setting RequestedHash
+bdns Confirm skipUnpress
+waitForUnpress:
+yield
+l r0 Confirm Setting
+bnez r0 waitForUnpress
+skipUnpress:
+l r0 RequestItem PrefabHash
+beq r0 HashD start
+s RequestItem Setting 0
+j start

@@ -1,0 +1,25 @@
+    alias Target d0
+    alias LastId r15
+    alias CurrentId r14
+    define StartId 0 
+    move LastId -2
+start:
+    yield
+    move ra start
+    bdns Target setDefault
+    l CurrentId db:1 Channel5
+    beq CurrentId LastId start
+    bnan CurrentId start
+    move LastId CurrentId
+    add CurrentId CurrentId 1
+    s db Setting CurrentId
+    s db:0 Channel5 CurrentId
+    s Target On 0
+    yield
+    s Target LineNumber 0
+    s Target On 1
+    j start
+setDefault:
+    s db Setting StartId
+    s db:0 Channel5 StartId
+    j start

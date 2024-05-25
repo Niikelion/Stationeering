@@ -1,0 +1,25 @@
+    alias Mixer d0
+    alias Sensor1 d1
+    alias Sensor2 d2
+    alias T1 r15
+    alias T2 r14
+    alias NegRatio r13
+    define TargetRatio 0.5
+init:
+    sub NegRatio 1 TargetRatio
+start:
+    yield
+    l r0 Sensor1 Pressure
+    l r1 Sensor2 Pressure
+    sgtz r0 r0
+    sgtz r1 r1
+    and r0 r0 r1
+    beqz r0 start
+    l T1 Sensor1 Temperature
+    l T2 Sensor2 Temperature
+    mul r0 TargetRatio T1
+    mul r1 NegRatio T2
+    add r1 r1 r0
+    div r0 r0 r1
+    s Mixer Setting r0
+    j start

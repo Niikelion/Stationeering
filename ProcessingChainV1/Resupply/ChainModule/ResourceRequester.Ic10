@@ -1,0 +1,117 @@
+    alias ResourceInfoRequester d0
+    alias ResourceRequester d1
+    alias Id d2
+    alias RouteId d3
+    alias Count r15
+    alias Current r14
+    alias CurrentResource r13
+    alias Ticks r12
+    alias MaxTransferTicks r11
+    alias TranslatedResource r11
+    define MinAmount 500
+    define Translate 1
+    define TransferTicks 5
+init:
+    s db Setting -1000
+    push HASH("Hastelloy")
+    push HASH("ItemHastelloyIngot")
+    push HASH("Waspaloy")
+    push HASH("ItemWaspaloyIngot")
+    push HASH("Stellite")
+    push HASH("ItemStelliteIngot")
+    push HASH("Inconel")
+    push HASH("ItemInconelIngot")
+    push HASH("Astroloy")
+    push HASH("ItemAstroloyIngot")
+    push HASH("Invar")
+    push HASH("ItemInvarIngot")
+    push HASH("Constantan")
+    push HASH("ItemConstantanIngot")
+    push HASH("Electrum")
+    push HASH("ItemElectrumIngot")
+    push HASH("Solder")
+    push HASH("ItemSolderIngot")
+    push HASH("Steel")
+    push HASH("ItemSteelIngot")
+    push HASH("Silver")
+    push HASH("ItemSilverIngot")
+    push HASH("Nickel")
+    push HASH("ItemNickelIngot")
+    push HASH("Silicon")
+    push HASH("ItemSiliconIngot")
+    push HASH("Gold")
+    push HASH("ItemGoldIngot")
+    push HASH("Copper")
+    push HASH("ItemCopperIngot")
+    push HASH("Iron")
+    push HASH("ItemIronIngot")
+    move Count sp
+    div Count Count 2
+    s db Setting 0
+    move Current 0
+start:
+    yield
+    jal handleResource
+    add Current Current 1
+    mod Current Current Count
+    j start
+handleResource:
+    push ra
+    jal getResource
+    jal getInfo
+    bge r0 MinAmount handleResourceEnd
+    jal requestResource
+handleResourceEnd:
+    pop ra
+    j ra
+getInfo:
+    s ResourceInfoRequester Setting CurrentResource
+waitForInfo:
+    yield
+    l r0 ResourceInfoRequester Setting
+    beq r0 CurrentResource waitForInfo
+    s ResourceInfoRequester Setting -1
+    j ra
+getResource:
+    move r1 sp
+    move sp Current
+    mul sp sp 2
+    add sp sp 1
+    peek CurrentResource
+    add sp sp Translate
+    peek TranslatedResource
+    move sp r1
+    j ra
+requestResource:
+    l r0 Id Setting
+    s RouteId Setting r0
+    s ResourceRequester Setting TranslatedResource
+waitForRequest:
+    yield
+    l r0 ResourceRequester Setting
+    beq r0 0 resourceRequestAbandon
+    beq r0 1 resourceRequestEnd
+    j waitForRequest
+resourceRequestAbandon:
+    s ResourceRequester Setting 0
+    move r0 0
+    j ra
+resourceRequestEnd:
+    s ResourceRequester Setting 0
+    move r0 0
+    push ra
+    move MaxTransferTicks TransferTicks
+    move Ticks MaxTransferTicks
+    jal getInfo
+sendLoop:
+    sleep 1
+    sub Ticks Ticks 1
+    s db Setting Ticks
+    blez Ticks sendLoopEnd
+    move r1 r0
+    jal getInfo
+    ble r1 r0 sendLoop
+sendLoopEnd:
+    pop ra
+    move r0 1
+    j ra

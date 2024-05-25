@@ -1,0 +1,21 @@
+    alias Furnace d0
+    alias PressureD d1
+    alias OutputD d2
+    alias InputD d3
+    alias FlushS d4
+    alias ActivateB d5
+start:
+    l r0 Furnace Pressure
+    s PressureD Setting r0
+    l r0 Furnace Temperature
+    s db Setting r0
+    l r0 OutputD Setting
+    s Furnace SettingOutput r0
+    l r0 InputD Setting
+    s Furnace SettingInput r0
+    l r0 FlushS Setting
+    s Furnace Open r0
+    l r0 ActivateB Setting
+    s Furnace Activate r0
+    yield
+    j start

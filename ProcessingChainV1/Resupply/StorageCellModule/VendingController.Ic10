@@ -1,0 +1,90 @@
+    alias PreviousModule d0
+    alias NextModule d1
+    alias Vending d2
+    alias OverrideStacker db
+    alias Stacker d3
+    alias StackerFlipFlop d4
+    alias RouteFlipFlop d5
+    alias Item r15
+    alias LastCount r14
+    alias CurrentCount r13
+    define StackerRouterId 4
+    define RouteRouterId 5
+start:
+    s OverrideStacker Setting 0
+waitForRequest:
+    yield
+    l Item PreviousModule Setting
+    beqz Item waitForRequest
+    s PreviousModule Setting 0
+    jal handleRequest
+    j start
+handleRequest:
+    push ra
+    beq Item 1 handlePassthrough
+handleLookup:
+    jal initOutput
+    l LastCount Vending ExportCount
+    s Vending RequestHash Item
+    sleep 1.2
+    l CurrentCount Vending ExportCount
+    jal deinitOutput
+    beq LastCount CurrentCount handlePassthrough
+    s NextModule Setting 1
+    pop ra
+    j ra
+handlePassthrough:
+    s NextModule Setting Item
+    pop ra
+    j ra
+initOutput:
+    bdns RouteFlipFlop ra
+    s OverrideStacker Setting 1
+waitForOverride:
+    yield
+    l r2 OverrideStacker Setting
+    bne r2 -1 waitForOverride
+    push ra
+    move r6 1
+    move r5 StackerRouterId
+    jal route
+    move r5 RouteRouterId
+    jal route
+    pop ra
+    s RouteFlipFlop On 0
+    bdns Stacker ra
+    s Stacker ClearMemory 1
+    j ra
+deinitOutput:
+    bdns RouteFlipFlop ra
+    sub r3 CurrentCount LastCount
+    bdns Stacker afterStacker
+waitForStacker:
+    yield
+    l r2 Stacker ImportCount
+    bne r3 r2 waitForStacker
+    sleep 1
+    s Stacker Activate 1
+afterStacker:
+    beqz r3 cleanupStacker
+waitForRoute:
+    yield
+    ls r4 RouteFlipFlop 0 Occupied
+    beqz r4 waitForRoute
+cleanupStacker:
+    s RouteFlipFlop On 1
+    yield
+    move r5 RouteRouterId
+    move r6 0
+    push ra
+    jal route
+    pop ra
+    s OverrideStacker Setting 0
+    j ra
+route: #r5 - router device id r6 - value
+    s dr5 Mode r6
+    s dr5 Setting r6
+    xor r6 r6 1
+    s dr5 SettingOutput r6
+    xor r6 r6 1
+    j ra

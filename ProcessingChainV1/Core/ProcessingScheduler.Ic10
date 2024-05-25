@@ -8,7 +8,7 @@
     alias Length r13
     alias Start r12
     alias End r11
-    define MaxLength 100
+    define MaxLength 256
 start:
     yield
     l Item ItemHash Setting
@@ -16,12 +16,14 @@ start:
     slt r0 Item -1
     sgt r1 Item 255
     or r0 r0 r1
+    # Enqueue if ItemHash is outside of range [-1, 255]
     bnezal r0 enqueue
+    # Dequeue if HashSelector = -1
     l r0 HashSelector Setting
     beqal r0 -1 dequeue
     j start
 dequeue:
-    #return if no elements to dequeue
+    # Return if no elements to dequeue
     beqz Length ra
     sub Length Length 1
     add Start Start 2
@@ -34,7 +36,7 @@ dequeue:
 enqueue:
     sge r0 Length MaxLength
     s Overflow Setting r0
-    #exit if overflow
+    # Exit if overflow
     bgtz r0 ra
     s ItemHash Setting 0
     add Length Length 1

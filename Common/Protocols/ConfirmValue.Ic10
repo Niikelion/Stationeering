@@ -1,11 +1,12 @@
     alias Source d0
     alias Confirm d1
+    alias Target d2
 start:
     yield
     l r0 Confirm Setting
     beqz r0 start
     l r0 Source Setting
-    s db Setting r0
+    s Target Setting r0
 wait:
     l r0 Confirm Setting
     bgtz r0 wait

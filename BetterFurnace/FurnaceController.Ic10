@@ -1,0 +1,110 @@
+    alias Furnace d0
+    alias Vent d1
+    alias Activator d2
+    alias Valve d3
+    alias StorePressureSensor d4
+    alias FuelPump d5
+    alias Press r15
+    alias Temp r14
+    alias ExtPress r13
+    alias Ready r12
+    alias LastImport r11
+    define MinExtPress 200
+    define MaxPress 50000
+    define MaxInPress 50000
+    define MinInPress 20000
+    define MinTemp 1300
+    define MinOpenTemp 1000
+start:
+    jal emptyGasses
+waitForActive:
+    yield
+    l r0 Activator Setting
+    beqz r0 waitForActive
+    jal inputGasses
+    jal maintainAtmo
+    yield
+    j start
+maintainAtmo:
+    push ra
+    s db Setting 3
+    move Ready 0
+    s Furnace SettingInput 100
+    s Furnace ClearMemory 1
+    yield
+    s Furnace ClearMemory 0
+    move LastImport 0
+    s Furnace Open 0
+maintainAtmoLoop:
+    yield
+    jal fetchData
+    l r2 Furnace Combustion # Activate if not burning just in case
+    seqz r2 r2
+    s Furnace Activate r2
+    sgt r1 Press MaxInPress # Activate Vent and output when too much pressure
+    s Vent On r1
+    mul r1 r1 100
+    s Furnace SettingOutput r1
+    slt r0 Temp MinTemp # Add fuel if temp of pressure not sufficient
+    slt r1 Press MinInPress
+    or r0 r0 r1
+    s FuelPump On r0
+    l r0 Furnace RecipeHash # Open furnace only when recipe is ready
+    snez r0 r0
+    s Furnace Open r0
+    l r0 Furnace ExportCount # Input only when previous is done
+    bne r0 LastImport maintainAtmoEnd
+    add LastImport LastImport 1
+    s Valve Open 1
+maintainAtmoEnd:
+    l r0 Activator Setting
+    bnez r0 maintainAtmoLoop
+    pop ra
+    s Furnace Open 0
+    j ra
+emptyGasses:
+    push ra
+    s db Setting 1
+    s Furnace SettingInput 0
+    s FuelPump On 0
+emptyGassesLoop:
+    yield
+    s Valve Open 0
+    jal fetchData
+    bgt ExtPress MaxPress emptyInternal
+    s Furnace SettingOutput 100
+    s Vent On 0
+    j emptyGassesEnd
+emptyInternal:
+    s Furnace SettingOutput 10
+    s Vent On 1
+emptyGassesEnd:
+    snez r0 Press
+    l r1 Activator Setting
+    xor r1 r1 1
+    and r0 r0 r1
+    bgtz r0 emptyGassesLoop
+    pop ra
+    j ra
+inputGasses:
+    s db Setting 2
+    s Furnace SettingInput 100
+    s Furnace SettingOutput 0
+    s Vent On 0
+    s FuelPump On 0
+    push ra
+waitForPressure:
+    yield
+    s Furnace Activate 1
+    jal fetchData
+    sgt r0 ExtPress MinExtPress
+    slt r1 Press MaxInPress
+    and r0 r0 r1
+    bnez r0 waitForPressure
+    pop ra
+    j ra
+fetchData:
+    l Press Furnace Pressure
+    l Temp Furnace Temperature
+    l ExtPress StorePressureSensor Pressure
+    j ra
