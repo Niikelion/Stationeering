@@ -11,50 +11,36 @@
     alias RequestItem r15
     alias RequestCount r14
     alias RequestMachine r13
-    alias Crafted r12
-    alias LastProgress r11
-    alias CurrentProgress r10
-    alias StaleCounter r9
-    alias OutputStacker r8
-    alias Outputted r7
-    alias StackSize r6
-    define MaxStale 20
+    alias RequestMachineId r12
+    alias Crafted r11
+    alias OutputStacker r10
+    alias Outputted r9
+    alias StackSize r8
+    alias Remaining r7
     define Out HASH("Output")
-    define StackerH HASH("StructureStacker")
-    define StackerRevH HASH("StructureStackerReverse")
 waitForRequest:
     yield
     l RequestItem RecipeRequest Setting
     beqz RequestItem waitForRequest # wait for incomming request
     l RequestCount RecipeCount Setting # load count
     jal findMachine
-    beqz RequestMachine handleError
+    beqz RequestMachineId handleError
     s db:0 Channel1 RequestItem # machine is ready, activate crafting and watch count
     s db:0 Channel2 RequestCount
-    move StaleCounter 0
-    move CurrentProgress 0
-    move LastProgress 0
     jal fetchStacker
-    sb RequestMachine ClearMemory 1
-    sd OutputStacker ClearMemory 1
+    sd RequestMachineId ClearMemory 1
     sd OutputStacker Mode 1
     move Outputted 0
     move Crafted 0
 waitForCrafting:
     yield
-    sb RequestMachine Activate 1
-    lb Crafted RequestMachine ExportCount Sum
+    ld Crafted RequestMachineId ExportCount
+    sub Remaining RequestCount Outputted
+    s db:0 Channel2 Remaining # show remaining count
     jal handleCancel
-    sub r0 RequestCount Crafted
-    s db:0 Channel2 r0 # show remaining count
-    jal handleStale
-    jal updateStacker
-    blt Crafted RequestCount waitForCrafting # wait for all items to be emitted
-    sb RequestMachine Activate 0 # stop crafting
-waitForOutput:
-    yield
-    jal updateStacker
-    bne Outputted RequestCount waitForOutput
+    jal handleMachine
+    jal handleStacker
+    bgtz Remaining waitForCrafting # wait for all items to be emitted
     j end
 handleError:
     bdns RequestFallback end # send recipe to fallback
@@ -78,7 +64,9 @@ waitForMachine:
     l RequestMachine RecipeProber Setting
     beq RequestMachine RequestItem waitForMachine
     s RecipeProber Setting 0
+    move RequestMachineId 0
     beqz RequestMachine ra
+    lb RequestMachineId RequestMachine ReferenceId Minimum
     s DeviceSelector Setting RequestMachine
 waitForActive:
     yield
@@ -88,30 +76,42 @@ waitForActive:
 handleCancel:
     l r0 RecipeCount Setting
     bnez r0 ra
+    clrd RequestMachineId
+    sd RequestMachineId Activate 0
+    sd RequestMachineId Lock 0
+    sleep 1
+    ld Crafted RequestMachineId ExportCount
+    s db:0 Channel2 0
     move r0 RequestCount
-    sub Crafted RequestCount Crafted
+    move RequestCount Crafted
 waitForCancelOutput:
     yield
-    jal updateStacker
+    jal handleStacker
     bne Outputted Crafted waitForCancelOutput
-    move RequestCount Crafted
+    sub RequestCount r0 Crafted
     j handleError
-handleStale:
-    lb CurrentProgress RequestMachine CompletionRatio Sum
-    bne CurrentProgress LastProgress notStale
-    add StaleCounter StaleCounter 1
-    blt StaleCounter MaxStale ra
-    sb RequestMachine Activate 0 # request is stale, reset machine
-notStale:
-    move LastProgress CurrentProgress
-    move StaleCounter 0
-    j ra
 fetchStacker:
-    lbn OutputStacker StackerH Out ReferenceId Minimum
+    lbn OutputStacker HASH("StructureStacker") Out ReferenceId Minimum
     bnez OutputStacker ra
-    lbn OutputStacker StackerRevH Out ReferenceId Minimum
+    lbn OutputStacker HASH("StructureStackerReverse") Out ReferenceId Minimum
     j ra
-updateStacker:
+handleMachine:
+    ld r0 RequestMachineId Lock
+    bnez r0 ra
+    sub r1 RequestCount Crafted
+    beqz r1 ra
+    sd RequestMachineId Lock 1
+    clrd RequestMachineId
+    putd RequestMachineId 0 PrinterInstruction.WaitUntilNextValid
+    sll r0 RequestItem 16
+    min r1 r1 5
+    sll r1 r1 8
+    or r0 r0 r1
+    or r0 r0 PrinterInstruction.ExecuteRecipe
+    putd RequestMachineId 1 r0
+    putd RequestMachineId 2 PrinterInstruction.DeviceSetLock
+    j ra
+handleStacker:
     ld r1 OutputStacker PrefabHash
     lbns r0 r1 Out 2 Occupied Minimum
     beqz r0 ra # no item, early return
